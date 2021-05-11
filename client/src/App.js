@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Typography, AppBar } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 
 import VideoPlayer from './components/VideoPlayer';
 import Sidebar from './components/Sidebar';
 import Notifications from './components/Notifications';
+import Chat from './components/Chat';
+import { SocketContext } from './Context';
 
 const useStyles = makeStyles((theme) => ({
   appBar: {
@@ -34,6 +36,7 @@ const useStyles = makeStyles((theme) => ({
 
 const App = () => {
   const classes = useStyles();
+  const { callAccepted, callEnded } = useContext(SocketContext);
 
   return (
     <div className={classes.wrapper}>
@@ -41,6 +44,7 @@ const App = () => {
         <Typography variant="h2" align="center">Video Chat</Typography>
       </AppBar>
       <VideoPlayer />
+      {callAccepted && !callEnded && <Chat />}
       <Sidebar>
         <Notifications />
       </Sidebar>

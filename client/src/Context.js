@@ -1,11 +1,12 @@
+/* eslint-disable */
 import React, { createContext, useState, useRef, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import Peer from 'simple-peer';
 
 const SocketContext = createContext();
 
-// const socket = io('http://localhost:5000');
-const socket = io('https://warm-wildwood-81069.herokuapp.com');
+const socket = io('http://localhost:5000');
+// const socket = io('https://warm-wildwood-81069.herokuapp.com');
 
 const ContextProvider = ({ children }) => {
   const [callAccepted, setCallAccepted] = useState(false);
@@ -14,6 +15,7 @@ const ContextProvider = ({ children }) => {
   const [name, setName] = useState('');
   const [call, setCall] = useState({});
   const [me, setMe] = useState('');
+  const [messages, setMessages] = useState([])
 
   const myVideo = useRef();
   const userVideo = useRef();
@@ -43,6 +45,8 @@ const ContextProvider = ({ children }) => {
       socket.emit('answerCall', { signal: data, to: call.from });
     });
 
+    peer.on('data', data => setMessages([...messages, { sender: "Other", text: data.toString() }]))
+
     peer.on('stream', (currentStream) => {
       userVideo.current.srcObject = currentStream;
     });
@@ -53,11 +57,13 @@ const ContextProvider = ({ children }) => {
   };
 
   const callUser = (id) => {
-    const peer = new Peer({ initiator: true, trickle: false, stream });
+    const peer = new Peer({ initiator: true, trickle: false, objectMode: true, stream });
 
     peer.on('signal', (data) => {
       socket.emit('callUser', { userToCall: id, signalData: data, from: me, name });
     });
+
+    peer.on('data', data => setMessages([...messages, { sender: "Other", text: data.toString() }]))
 
     peer.on('stream', (currentStream) => {
       userVideo.current.srcObject = currentStream;
@@ -71,6 +77,10 @@ const ContextProvider = ({ children }) => {
 
     connectionRef.current = peer;
   };
+
+  const sendMessage = (text) => {
+    connectionRef.current.send(text)
+  }
 
   const leaveCall = () => {
     setCallEnded(true);
@@ -94,6 +104,8 @@ const ContextProvider = ({ children }) => {
       callUser,
       leaveCall,
       answerCall,
+      sendMessage,
+      messages
     }}
     >
       {children}
@@ -102,3 +114,4 @@ const ContextProvider = ({ children }) => {
 };
 
 export { ContextProvider, SocketContext };
+/* eslint-enable */
